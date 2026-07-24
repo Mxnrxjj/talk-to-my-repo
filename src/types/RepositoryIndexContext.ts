@@ -1,5 +1,6 @@
 import { Repository } from "@prisma/client";
 import { RepositoryFile } from "./repository-file";
+import { RepositoryChunk } from "./repository-chunk";
 
 export interface RepositoryIndexContext {
   repository: Repository;
@@ -10,6 +11,7 @@ export interface RepositoryIndexContext {
   files: RepositoryFile[];
 
   // Chunk stage
+  chunks: RepositoryChunk[];
 
   // Embedding stage
 }

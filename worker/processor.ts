@@ -10,6 +10,7 @@ import { IndexRepositoryJob } from "@/types/jobs";
 import { RepositoryIndexContext } from "../src/types/RepositoryIndexContext";
 import { cloneRepository } from "./pipeline/clone";
 import { parseRepository } from "./pipeline/parse";
+import { chunkRepository } from "./pipeline/chunk";
 
 export async function processRepository(job: Job<IndexRepositoryJob>) {
   console.log("=================================");
@@ -29,6 +30,7 @@ export async function processRepository(job: Job<IndexRepositoryJob>) {
     repository,
     clonePath,
     files: [],
+    chunks: [],
   };
 
   try {
@@ -36,6 +38,7 @@ export async function processRepository(job: Job<IndexRepositoryJob>) {
 
     await cloneRepository(context);
     await parseRepository(context);
+    await chunkRepository(context);
 
     await RepositoryService.updateStatus(repository.id, RepositoryStatus.READY);
 
