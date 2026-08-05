@@ -4,7 +4,6 @@ const MODEL = "gemini-flash-latest";
 
 interface ChatCompletionResponse {
   answer: string;
-  sources: string[];
 }
 
 export class ChatCompletionService {
@@ -46,7 +45,6 @@ export class ChatCompletionService {
     });
 
     const text = response.text;
-    console.log(text);
 
     if (!text) {
       throw new Error("Gemini returned an empty response.");

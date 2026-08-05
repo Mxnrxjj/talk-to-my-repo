@@ -16,8 +16,8 @@ export interface Repository {
 
   status: RepositoryStatus;
 
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CreateRepositoryRequest {

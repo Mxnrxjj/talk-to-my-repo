@@ -52,14 +52,16 @@ model RepositoryChunk {
 }
 
 model Chat {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
   repositoryId String
   repository   Repository @relation(fields: [repositoryId], references: [id])
 
-  messages ChatMessage[]
+  title        String   @default("New Conversation")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  messages      ChatMessage[]
 }
 
 model ChatMessage {
@@ -71,5 +73,18 @@ model ChatMessage {
   role    String
   content String
 
+  sources ChatMessageSource[]
+
   createdAt DateTime @default(now())
+}
+
+model ChatMessageSource {
+  id String @id @default(cuid())
+
+  chatMessageId String
+  chatMessage ChatMessage @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+
+  filePath String
+  startLine Int
+  endLine Int
 }

@@ -3,8 +3,76 @@ import { ChatCompletionService } from "@/services/chat-completion.service";
 import { ChatResponse } from "@/types/chat";
 import { db } from "@/lib/db";
 import { NotFoundError } from "@/lib/errors/not-found-error";
+import { ChatTitleService } from "./chat-title.service";
 
 export class ChatService {
+  static async getByRepository(repositoryId: string) {
+    return db.chat.findMany({
+      where: {
+        repositoryId,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: "asc",
+          },
+          include: {
+            sources: true,
+          },
+        },
+      },
+    });
+  }
+
+  static async create(repositoryId: string) {
+    return db.chat.create({
+      data: {
+        repositoryId,
+        title: "New Conversation",
+      },
+    });
+  }
+
+  static async get(chatId: string) {
+    return db.chat.findUnique({
+      where: {
+        id: chatId,
+      },
+      include: {
+        messages: {
+          include: {
+            sources: true,
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+      },
+    });
+  }
+
+  static async rename(chatId: string, title: string) {
+    return db.chat.update({
+      where: {
+        id: chatId,
+      },
+      data: {
+        title,
+      },
+    });
+  }
+
+  static async delete(chatId: string) {
+    return db.chat.delete({
+      where: {
+        id: chatId,
+      },
+    });
+  }
+
   static async answer(chatId: string, question: string): Promise<ChatResponse> {
     const chat = await db.chat.findUnique({
       where: {
@@ -12,20 +80,24 @@ export class ChatService {
       },
     });
 
-    const messages = await db.chatMessage.findMany({
-      where: {
-        chatId,
-      },
-      orderBy: {
-        createdAt: "asc",
-      },
-    });
-
     if (!chat) {
       throw new NotFoundError(`Chat ${chatId} not found`);
     }
 
-    const chunks = await SearchService.search(chat.repositoryId, question);
+    const shouldGenerateTitle = chat.title === "New Conversation";
+
+    const [messages, chunks] = await Promise.all([
+      db.chatMessage.findMany({
+        where: {
+          chatId,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      }),
+
+      SearchService.search(chat.repositoryId, question),
+    ]);
 
     const context = chunks
       .map(
@@ -36,11 +108,16 @@ export class ChatService {
       )
       .join("\n\n---\n\n");
 
-    const history = messages
+    const history = [
+      ...messages,
+      {
+        role: "user",
+        content: question,
+      },
+    ]
       .map(
-        (message) => `${message.role === "user" ? "User" : "Assistant"}:
-
-        ${message.content}`,
+        (message) =>
+          `${message.role === "user" ? "User" : "Assistant"}:\n\n${message.content}`,
       )
       .join("\n\n");
 
@@ -64,22 +141,19 @@ export class ChatService {
         ${question}
     `;
 
+    await db.chatMessage.create({
+      data: {
+        chatId,
+        role: "user",
+        content: question,
+      },
+    });
+
     const completion = await ChatCompletionService.complete(prompt);
 
-    await db.chatMessage.createMany({
-      data: [
-        {
-          chatId,
-          role: "user",
-          content: question,
-        },
-        {
-          chatId,
-          role: "assistant",
-          content: completion.answer,
-        },
-      ],
-    });
+    const title = shouldGenerateTitle
+      ? ChatTitleService.fromQuestion(question)
+      : null;
 
     const sources = new Map<
       string,
@@ -90,17 +164,7 @@ export class ChatService {
       }
     >();
 
-    const normalizedSources = new Set(
-      completion.sources.map((path) => path.replaceAll("\\", "/")),
-    );
-
     for (const chunk of chunks) {
-      const filePath = chunk.filePath.replaceAll("\\", "/");
-
-      if (!normalizedSources.has(filePath)) {
-        continue;
-      }
-
       const existing = sources.get(chunk.filePath);
 
       if (!existing) {
@@ -115,6 +179,36 @@ export class ChatService {
       existing.startLine = Math.min(existing.startLine, chunk.startLine);
       existing.endLine = Math.max(existing.endLine, chunk.endLine);
     }
+
+    await db.$transaction([
+      ...(title
+        ? [
+            db.chat.update({
+              where: {
+                id: chatId,
+              },
+              data: {
+                title,
+              },
+            }),
+          ]
+        : []),
+
+      db.chatMessage.create({
+        data: {
+          chatId,
+          role: "assistant",
+          content: completion.answer,
+          sources: {
+            create: [...sources.values()].map((source) => ({
+              filePath: source.filePath,
+              startLine: source.startLine,
+              endLine: source.endLine,
+            })),
+          },
+        },
+      }),
+    ]);
 
     return {
       answer: completion.answer,

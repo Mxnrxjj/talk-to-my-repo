@@ -1,23 +1,26 @@
-import { db } from "@/lib/db";
 import RepositoryForm from "@/components/repository/RepositoryForm";
-import RepositoryList from "@/components/repository/RepositoryList";
 
-export default async function Home() {
-  const repositories = await db.repository.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
+export default function LandingPage() {
   return (
-    <main className="max-w-4xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Talk to My Repo</h1>
+    <main className="min-h-screen bg-background">
+      <section className="mx-auto flex max-w-3xl flex-col items-center px-6 py-32 text-center">
+        <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
+          AI-powered repository intelligence
+        </p>
 
-      <RepositoryForm />
+        <h1 className="mt-6 text-6xl font-semibold tracking-tight">
+          Talk to My Repo
+        </h1>
 
-      <div className="mt-8">
-        <RepositoryList repositories={repositories} />
-      </div>
+        <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
+          Understand any GitHub repository using semantic search, embeddings and
+          AI.
+        </p>
+
+        <div className="mt-12 w-full">
+          <RepositoryForm />
+        </div>
+      </section>
     </main>
   );
 }
