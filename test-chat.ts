@@ -1,20 +1,24 @@
 import "dotenv/config";
 
 import { ChatService } from "./src/services/chat.service";
+import { db } from "@/lib/db";
 
 async function main() {
-  const response = await ChatService.answer(
-    "cmsg1hk8a0006m4ksqgdchv8t",
-    "How does repository cloning work?",
+  const chat = await db.chat.create({
+    data: {
+      repositoryId: "cmsg1hk8a0006m4ksqgdchv8t",
+    },
+  });
+
+  console.log(
+    await ChatService.answer(chat.id, "How does repository cloning work?"),
   );
 
-  console.log("Answer:\n");
-  console.log(response.answer);
+  // console.log(await ChatService.answer(chat.id, "What happens after that?"));
 
-  console.log("\nSources:\n");
-  for (const source of response.sources) {
-    console.log(`- ${source.filePath} (${source.startLine}-${source.endLine})`);
-  }
+  // console.log(
+  //   await ChatService.answer(chat.id, "Where is the cleanup performed?"),
+  // );
 }
 
 main().catch(console.error);

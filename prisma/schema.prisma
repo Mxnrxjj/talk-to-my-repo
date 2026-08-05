@@ -18,34 +18,58 @@ enum RepositoryStatus {
 }
 
 model Repository {
-  id         String           @id @default(cuid())
-  githubUrl  String
-  name       String?
-  owner      String?
-  branch     String?
+  id        String  @id @default(cuid())
+  githubUrl String
+  name      String?
+  owner     String?
+  branch    String?
 
-  status     RepositoryStatus @default(QUEUED)
+  status RepositoryStatus @default(QUEUED)
 
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   chunks RepositoryChunk[]
+  chats  Chat[]
 }
 
 model RepositoryChunk {
-  id           String   @id @default(cuid())
+  id           String @id @default(cuid())
   repositoryId String
 
-  filePath     String
-  content      String
-  startLine    Int
-  endLine      Int
+  filePath  String
+  content   String
+  startLine Int
+  endLine   Int
 
   embedding Unsupported("vector(1024)")?
 
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
 
   repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
   @@index([repositoryId])
+}
+
+model Chat {
+  id           String     @id @default(cuid())
+  repositoryId String
+  repository   Repository @relation(fields: [repositoryId], references: [id])
+
+  messages ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatMessage {
+  id String @id @default(cuid())
+
+  chatId String
+  chat   Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  role    String
+  content String
+
+  createdAt DateTime @default(now())
 }
