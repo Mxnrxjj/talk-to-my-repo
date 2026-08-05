@@ -30,6 +30,10 @@ export async function chunkRepository(context: RepositoryIndexContext) {
 
       const content = chunkLines.join("\n");
 
+      if (content.trim().length === 0) {
+        continue;
+      }
+
       context.chunks.push({
         id: randomUUID(),
         filePath: relativePath,

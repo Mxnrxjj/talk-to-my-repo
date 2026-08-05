@@ -31,7 +31,13 @@ export async function embedRepository(context: RepositoryIndexContext) {
       console.warn(`Skipped ${emptyChunks.length} empty chunks`);
     }
 
-    const texts = validChunks.map((chunk) => chunk.content);
+    const texts = validChunks.map(
+      (chunk) =>
+        `File: ${chunk.filePath}
+      Lines: ${chunk.startLine}-${chunk.endLine}
+
+      ${chunk.content}`,
+    );
 
     const embeddings = await EmbeddingService.embedMany(texts, "document");
 
