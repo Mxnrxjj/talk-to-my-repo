@@ -15,6 +15,7 @@ export class RepositoryChunkService {
 
       await tx.repositoryChunk.createMany({
         data: chunks.map((chunk) => ({
+          id: chunk.id,
           repositoryId,
           filePath: chunk.filePath,
           content: chunk.content,
@@ -23,5 +24,15 @@ export class RepositoryChunkService {
         })),
       });
     });
+  }
+
+  static async updateEmbedding(chunkId: string, embedding: number[]) {
+    const vector = `[${embedding.join(",")}]`;
+
+    await db.$executeRaw`
+    UPDATE "RepositoryChunk"
+    SET "embedding" = ${vector}::vector
+    WHERE "id" = ${chunkId}
+  `;
   }
 }

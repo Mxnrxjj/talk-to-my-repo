@@ -41,7 +41,7 @@ model RepositoryChunk {
   startLine    Int
   endLine      Int
 
-  embedding Unsupported("vector(1536)")?
+  embedding Unsupported("vector(1024)")?
 
   createdAt    DateTime @default(now())
 

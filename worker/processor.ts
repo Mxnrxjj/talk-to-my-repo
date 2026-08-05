@@ -12,6 +12,7 @@ import { cloneRepository } from "./pipeline/clone";
 import { parseRepository } from "./pipeline/parse";
 import { chunkRepository } from "./pipeline/chunk";
 import { persistRepository } from "./pipeline/persist";
+import { embedRepository } from "./pipeline/embed";
 
 export async function processRepository(job: Job<IndexRepositoryJob>) {
   console.log("=================================");
@@ -41,6 +42,14 @@ export async function processRepository(job: Job<IndexRepositoryJob>) {
     await parseRepository(context);
     await chunkRepository(context);
     await persistRepository(context);
+
+    await RepositoryService.updateStatus(
+      repository.id,
+      RepositoryStatus.EMBEDDING,
+    );
+
+    await embedRepository(context);
+
     await RepositoryService.updateStatus(repository.id, RepositoryStatus.READY);
 
     console.log("Repository indexed successfully");

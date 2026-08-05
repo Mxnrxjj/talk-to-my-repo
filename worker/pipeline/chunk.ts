@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import { RepositoryIndexContext } from "@/types/RepositoryIndexContext";
+import { randomUUID } from "node:crypto";
 
 const CHUNK_SIZE = 50;
 const CHUNK_OVERLAP = 10;
@@ -30,6 +31,7 @@ export async function chunkRepository(context: RepositoryIndexContext) {
       const content = chunkLines.join("\n");
 
       context.chunks.push({
+        id: randomUUID(),
         filePath: relativePath,
         content,
         startLine: start + 1,
