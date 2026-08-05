@@ -41,7 +41,7 @@ export class RepositoryChunkService {
   static async searchSimilar(
     repositoryId: string,
     embedding: number[],
-    limit = 10,
+    limit = 5,
   ): Promise<SearchResult[]> {
     const vector = `[${embedding.join(",")}]`;
 
