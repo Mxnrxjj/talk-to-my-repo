@@ -48,3 +48,10 @@ next-env.d.ts
 
 # OS
 .DS_Store
+
+# Local test scripts
+delete.ts
+test-chat.ts
+test-embedding.ts
+test-search.ts
+check-queue.ts
