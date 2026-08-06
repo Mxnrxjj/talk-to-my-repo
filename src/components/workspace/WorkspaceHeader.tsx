@@ -5,6 +5,8 @@ import { useTheme } from "next-themes";
 
 import { Repository } from "@/types/repository";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 interface WorkspaceHeaderProps {
   repository: Repository;
@@ -55,6 +57,13 @@ export default function WorkspaceHeader({ repository }: WorkspaceHeaderProps) {
   return (
     <header className="border-b bg-background">
       <div className="mx-auto flex h-16 items-center justify-between px-6">
+        <Link
+          href="/dashboard"
+          className="mr-4 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition hover:bg-muted"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Dashboard
+        </Link>
         <div>
           <h1 className="text-lg font-semibold">{repository.name}</h1>
 
