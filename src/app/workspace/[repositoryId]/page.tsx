@@ -2,12 +2,9 @@ import { notFound } from "next/navigation";
 
 import { db } from "@/lib/db";
 import { ChatService } from "@/services/chat.service";
-import RepositoryTree from "@/components/workspace/RepositoryTree";
 import { FileTreeService } from "@/services/file-tree.service";
-import RepositoryStructure from "@/components/workspace/RepositoryStructure";
 
 import Workspace from "@/components/workspace/Workspace";
-import Chat from "@/components/chat/Chat";
 
 interface WorkspacePageProps {
   params: Promise<{
@@ -56,12 +53,9 @@ export default async function WorkspacePage({
       repository={repository}
       chats={chats}
       activeChatId={activeChat.id}
-    >
-      {view === "structure" ? (
-        <RepositoryStructure tree={tree} />
-      ) : (
-        <Chat chatId={activeChat.id} messages={activeChat.messages} />
-      )}
-    </Workspace>
+      messages={activeChat.messages}
+      tree={tree}
+      view={view === "structure" ? "structure" : "chat"}
+    />
   );
 }

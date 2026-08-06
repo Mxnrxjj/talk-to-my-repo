@@ -62,14 +62,15 @@ export default function WorkspaceSidebar({
 
     await deleteChat(chatId);
 
-    if (chatId === activeChatId) {
-      if (remaining.length > 0) {
-        router.replace(`/workspace/${repository.id}?chat=${remaining[0].id}`);
-      } else {
-        router.replace(`/workspace/${repository.id}`);
-      }
+    if (remaining.length === 0) {
+      router.replace(`/workspace/${repository.id}`);
+    } else {
+      const nextChat =
+        chatId === activeChatId
+          ? remaining[0]
+          : (remaining.find((c) => c.id === activeChatId) ?? remaining[0]);
 
-      return;
+      router.replace(`/workspace/${repository.id}?chat=${nextChat.id}`);
     }
 
     router.refresh();
@@ -134,7 +135,7 @@ export default function WorkspaceSidebar({
                       setRenamingId(null);
                     }
                   }}
-                  className="mx-2 flex-1 rounded bg-transparent px-2 py-1 text-sm outline-none"
+                  className="py-2 px-3 flex-1 rounded bg-transparent text-sm outline-none"
                 />
               ) : (
                 <Link
@@ -148,7 +149,7 @@ export default function WorkspaceSidebar({
               <DropdownMenu>
                 <DropdownMenuTrigger
                   className={cn(
-                    "mr-1 inline-flex h-7 w-7 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted",
+                    "mr-1 inline-flex h-7 w-7 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100",
                     chat.id === activeChatId && "opacity-100",
                   )}
                 >

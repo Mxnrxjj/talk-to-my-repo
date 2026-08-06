@@ -18,3 +18,12 @@ export async function createRepository(
 export async function getRepositories(): Promise<Repository[]> {
   return api<Repository[]>("/api/repositories");
 }
+
+export async function getRepositoryFile(repositoryId: string, path: string) {
+  return api<{
+    path: string;
+    content: string;
+  }>(
+    `/api/repositories/${repositoryId}/files?path=${encodeURIComponent(path)}`,
+  );
+}

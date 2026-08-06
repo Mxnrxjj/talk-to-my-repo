@@ -30,7 +30,23 @@ model Repository {
   updatedAt DateTime @updatedAt
 
   chunks RepositoryChunk[]
+  files RepositoryFile[]
   chats  Chat[]
+}
+
+model RepositoryFile {
+  id String @id @default(cuid())
+
+  repositoryId String
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  path String
+  content String
+
+  createdAt DateTime @default(now())
+
+  @@index([repositoryId])
+  @@unique([repositoryId, path])
 }
 
 model RepositoryChunk {
@@ -54,7 +70,7 @@ model RepositoryChunk {
 model Chat {
   id           String   @id @default(cuid())
   repositoryId String
-  repository   Repository @relation(fields: [repositoryId], references: [id])
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
   title        String   @default("New Conversation")
 
@@ -62,6 +78,7 @@ model Chat {
   updatedAt    DateTime @updatedAt
 
   messages      ChatMessage[]
+  
 }
 
 model ChatMessage {

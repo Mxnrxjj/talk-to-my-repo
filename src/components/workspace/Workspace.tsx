@@ -1,22 +1,48 @@
-import { Chat } from "@prisma/client";
+"use client";
+
+import { Chat as PrismaChat } from "@prisma/client";
 import { Repository } from "@/types/repository";
 
 import WorkspaceHeader from "./WorkspaceHeader";
 import WorkspaceSidebar from "./WorkspaceSidebar";
+import { useState } from "react";
+
+import { ChatSource } from "@/types/chat";
+import Chat from "@/components/chat/Chat";
+import CodeViewer from "./CodeViewer";
+import RepositoryStructure from "./RepositoryStructure";
 
 interface WorkspaceProps {
   repository: Repository;
-  chats: Chat[];
+  chats: PrismaChat[];
   activeChatId: string;
-  children: React.ReactNode;
+
+  messages: {
+    id: string;
+    role: string;
+    content: string;
+    sources: ChatSource[];
+  }[];
+
+  tree: any;
+
+  view: "chat" | "structure";
 }
 
 export default function Workspace({
   repository,
   chats,
   activeChatId,
-  children,
+  messages,
+  tree,
+  view,
 }: WorkspaceProps) {
+  const [selectedFile, setSelectedFile] = useState<{
+    path: string;
+    startLine: number;
+    endLine: number;
+  } | null>(null);
+
   return (
     <main className="flex h-screen flex-col bg-background">
       <WorkspaceHeader repository={repository} />
@@ -28,7 +54,27 @@ export default function Workspace({
           activeChatId={activeChatId}
         />
 
-        <section className="flex-1 bg-background">{children}</section>
+        <section className="flex-1 bg-background">
+          {view === "structure" ? (
+            <RepositoryStructure tree={tree} />
+          ) : (
+            <div className="grid h-full grid-cols-[1fr_520px]">
+              <Chat
+                chatId={activeChatId}
+                messages={messages}
+                onSourceClick={(path, startLine, endLine) =>
+                  setSelectedFile({
+                    path,
+                    startLine,
+                    endLine,
+                  })
+                }
+              />
+
+              <CodeViewer repositoryId={repository.id} file={selectedFile} />
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );

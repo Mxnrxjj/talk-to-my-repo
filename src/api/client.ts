@@ -7,8 +7,13 @@ export async function api<T>(
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },
+    cache: "no-store",
     ...init,
   });
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
 
   const data = await response.json();
 

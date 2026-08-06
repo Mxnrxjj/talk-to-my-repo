@@ -83,7 +83,9 @@ export default function ChatInput({
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={
+          isDisabled ? "Thinking..." : "Ask anything about this repository..."
+        }
         disabled={isDisabled}
         rows={1}
         className={cn(

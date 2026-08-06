@@ -13,6 +13,7 @@ import { parseRepository } from "./pipeline/parse";
 import { chunkRepository } from "./pipeline/chunk";
 import { persistRepository } from "./pipeline/persist";
 import { embedRepository } from "./pipeline/embed";
+import { persistRepositoryFiles } from "./pipeline/persist-files";
 
 export async function processRepository(job: Job<IndexRepositoryJob>) {
   console.log("=================================");
@@ -40,6 +41,7 @@ export async function processRepository(job: Job<IndexRepositoryJob>) {
 
     await cloneRepository(context);
     await parseRepository(context);
+    await persistRepositoryFiles(context);
     await chunkRepository(context);
     await persistRepository(context);
 

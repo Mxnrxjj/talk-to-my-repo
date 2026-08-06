@@ -10,6 +10,7 @@ const IGNORED_DIRECTORIES = new Set([
   ".turbo",
   ".cache",
   "out",
+  "vendor",
 ]);
 
 const IGNORED_EXTENSIONS = new Set([

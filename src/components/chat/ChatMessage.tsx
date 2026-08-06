@@ -9,9 +9,15 @@ export interface ChatMessageProps {
   role: "user" | "assistant";
   content: string;
   sources?: ChatSource[];
+  onSourceClick?: (path: string, startLine: number, endLine: number) => void;
 }
 
-export function ChatMessage({ role, content, sources }: ChatMessageProps) {
+export function ChatMessage({
+  role,
+  content,
+  sources,
+  onSourceClick,
+}: ChatMessageProps) {
   const isAssistant = role === "assistant";
 
   return (
@@ -58,7 +64,25 @@ export function ChatMessage({ role, content, sources }: ChatMessageProps) {
             "[&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-zinc-700 [&_blockquote]:pl-3 [&_blockquote]:text-zinc-400",
           )}
         >
-          <ReactMarkdown>{content}</ReactMarkdown>
+          {content === "Thinking..." ? (
+            <div className="flex items-center gap-2 text-white/80">
+              <div className="flex gap-1">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-white/80" />
+                <span
+                  className="h-2 w-2 animate-bounce rounded-full bg-white/80"
+                  style={{ animationDelay: "150ms" }}
+                />
+                <span
+                  className="h-2 w-2 animate-bounce rounded-full bg-white/80"
+                  style={{ animationDelay: "300ms" }}
+                />
+              </div>
+
+              <span>Thinking...</span>
+            </div>
+          ) : (
+            <ReactMarkdown>{content}</ReactMarkdown>
+          )}
         </div>
 
         {/* Source chips */}
@@ -76,7 +100,14 @@ export function ChatMessage({ role, content, sources }: ChatMessageProps) {
                 return (
                   <button
                     key={`${source.filePath}-${source.startLine}`}
-                    className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800/60 px-2.5 py-1 text-xs text-zinc-300"
+                    className="flex items-center hover:bg-zinc-800 gap-1.5 rounded-md border border-zinc-700 bg-zinc-800/60 px-2.5 py-1 text-xs text-zinc-300"
+                    onClick={() =>
+                      onSourceClick?.(
+                        source.filePath,
+                        source.startLine,
+                        source.endLine,
+                      )
+                    }
                   >
                     <FileCode2 className="h-3.5 w-3.5 text-zinc-500" />
 
