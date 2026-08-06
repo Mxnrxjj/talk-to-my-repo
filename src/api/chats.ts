@@ -35,3 +35,26 @@ export async function deleteChat(chatId: string) {
     method: "DELETE",
   });
 }
+
+export async function sendMessageStream(
+  chatId: string,
+  body: ChatRequest,
+): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+  const response = await fetch(`/api/chats/${chatId}/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error("Request failed");
+  }
+
+  if (!response.body) {
+    throw new Error("No response body");
+  }
+
+  return response.body.getReader();
+}

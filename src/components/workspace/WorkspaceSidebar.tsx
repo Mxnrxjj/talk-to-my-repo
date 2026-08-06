@@ -29,12 +29,14 @@ interface WorkspaceSidebarProps {
   repository: Repository;
   chats: Chat[];
   activeChatId: string;
+  onShowStructure: () => void;
 }
 
 export default function WorkspaceSidebar({
   repository,
   chats,
   activeChatId,
+  onShowStructure,
 }: WorkspaceSidebarProps) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
@@ -190,12 +192,12 @@ export default function WorkspaceSidebar({
           </h2>
         </div>
 
-        <Link
-          href={`/workspace/${repository.id}?view=structure`}
-          className="block rounded-lg px-3 py-2 text-sm transition hover:bg-muted"
+        <button
+          onClick={onShowStructure}
+          className="block w-full rounded-lg px-3 py-2 text-left text-sm transition hover:bg-muted"
         >
           🌳 Repository Structure
-        </Link>
+        </button>
       </section>
     </aside>
   );

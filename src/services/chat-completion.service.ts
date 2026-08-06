@@ -4,6 +4,7 @@ const MODEL = "gemini-flash-latest";
 
 interface ChatCompletionResponse {
   answer: string;
+  sources: number[];
 }
 
 export class ChatCompletionService {
@@ -27,19 +28,26 @@ export class ChatCompletionService {
 
           Answer ONLY using the provided repository context.
 
-          Return valid JSON in exactly this format:
+          At the END of your response, append exactly:
 
-          {
-            "answer": "your answer",
-            "sources": [
-              "path/to/file1",
-              "path/to/file2"
-            ]
-          }
+          <<<SOURCES>>>
+          [index1,index2,...]
 
-          Only include file paths that directly support your answer.
-          Do not invent file paths.
-        `,
+          Example:
+
+          Cleanup is performed in GitService.remove.
+
+          <<<SOURCES>>>
+          [2]
+
+          Rules:
+
+          - The answer must be plain Markdown.
+          - Do NOT wrap the answer in JSON.
+          - Do NOT explain the source list.
+          - Only output <<<SOURCES>>> once.
+          - Only include indices that exist in the repository context.
+          `,
       },
       contents: prompt,
     });
@@ -50,6 +58,48 @@ export class ChatCompletionService {
       throw new Error("Gemini returned an empty response.");
     }
 
+    console.log(text);
+
     return JSON.parse(text) as ChatCompletionResponse;
+  }
+
+  static async stream(prompt: string) {
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not configured");
+    }
+
+    const ai = new GoogleGenAI({
+      apiKey,
+    });
+
+    return ai.models.generateContentStream({
+      model: MODEL,
+      config: {
+        systemInstruction: `
+        You are an expert software engineer.
+
+        Answer ONLY using the provided repository context.
+
+        Use markdown.
+
+        At the VERY END of your response append exactly:
+
+        <<<SOURCES>>>
+        [0,2]
+
+        Rules:
+
+        - The answer comes FIRST.
+        - The delimiter <<<SOURCES>>> appears EXACTLY ONCE.
+        - After the delimiter output ONLY a JSON array of source indices.
+        - Do not explain the array.
+        - Do not wrap anything in markdown fences.
+        - Only reference indices that exist in the provided repository context.
+        `,
+      },
+      contents: prompt,
+    });
   }
 }

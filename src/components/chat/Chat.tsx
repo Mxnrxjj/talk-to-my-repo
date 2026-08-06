@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import ChatInput from "./ChatInput";
 import { ChatMessage } from "./ChatMessage";
 
-import { sendMessage } from "@/api/chats";
+import { sendMessageStream } from "@/api/chats";
 import { ChatSource } from "@/types/chat";
 
 interface ChatProps {
@@ -25,19 +25,34 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
 
   const [loading, setLoading] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+  const [streamingAnswer, setStreamingAnswer] = useState("");
 
   async function handleSend(question: string) {
     try {
       setPendingQuestion(question);
+      setStreamingAnswer("");
       setLoading(true);
 
-      await sendMessage(chatId, {
+      const reader = await sendMessageStream(chatId, {
         question,
       });
+
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        setStreamingAnswer((prev) => prev + decoder.decode(value));
+      }
 
       router.refresh();
     } finally {
       setPendingQuestion(null);
+      setStreamingAnswer("");
       setLoading(false);
     }
   }
@@ -59,7 +74,7 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
           {
             id: "pending-assistant",
             role: "assistant",
-            content: "Thinking...",
+            content: streamingAnswer || "Thinking...",
             sources: [],
           },
         ]
@@ -75,9 +90,9 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
   }, [optimisticMessages]);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-8 py-12">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-8 py-12">
           {messages.length === 0 && !loading && !pendingQuestion ? (
             <div className="flex flex-1 flex-col items-center justify-center py-24 text-center">
               <div className="mb-6 text-6xl">🤖</div>
@@ -98,7 +113,7 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
                 ].map((example) => (
                   <button
                     key={example}
-                    // onClick={() => handleSend(example)}
+                    onClick={() => handleSend(example)}
                     className="rounded-xl border px-4 py-3 text-left text-sm transition hover:bg-muted"
                   >
                     ✨ {example}

@@ -12,7 +12,6 @@ interface WorkspacePageProps {
   }>;
   searchParams: Promise<{
     chat?: string;
-    view?: string;
   }>;
 }
 
@@ -21,7 +20,7 @@ export default async function WorkspacePage({
   searchParams,
 }: WorkspacePageProps) {
   const { repositoryId } = await params;
-  const { chat: chatId, view } = await searchParams;
+  const { chat: chatId } = await searchParams;
 
   const repository = await db.repository.findUnique({
     where: {
@@ -55,7 +54,6 @@ export default async function WorkspacePage({
       activeChatId={activeChat.id}
       messages={activeChat.messages}
       tree={tree}
-      view={view === "structure" ? "structure" : "chat"}
     />
   );
 }

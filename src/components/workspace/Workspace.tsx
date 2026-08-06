@@ -5,7 +5,7 @@ import { Repository } from "@/types/repository";
 
 import WorkspaceHeader from "./WorkspaceHeader";
 import WorkspaceSidebar from "./WorkspaceSidebar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ChatSource } from "@/types/chat";
 import Chat from "@/components/chat/Chat";
@@ -25,8 +25,6 @@ interface WorkspaceProps {
   }[];
 
   tree: any;
-
-  view: "chat" | "structure";
 }
 
 export default function Workspace({
@@ -35,13 +33,29 @@ export default function Workspace({
   activeChatId,
   messages,
   tree,
-  view,
 }: WorkspaceProps) {
+  const PANEL_TRANSITION_MS = 300;
+
+  const [showStructure, setShowStructure] = useState(false);
   const [selectedFile, setSelectedFile] = useState<{
     path: string;
     startLine: number;
     endLine: number;
   } | null>(null);
+
+  const [panelFile, setPanelFile] = useState<typeof selectedFile>(null);
+
+  useEffect(() => {
+    if (selectedFile) {
+      setPanelFile(selectedFile);
+      return;
+    }
+
+    if (panelFile) {
+      const timeout = setTimeout(() => setPanelFile(null), PANEL_TRANSITION_MS);
+      return () => clearTimeout(timeout);
+    }
+  }, [selectedFile, panelFile]);
 
   return (
     <main className="flex h-screen flex-col bg-background">
@@ -52,28 +66,51 @@ export default function Workspace({
           repository={repository}
           chats={chats}
           activeChatId={activeChatId}
+          onShowStructure={() => {
+            setSelectedFile(null);
+            setShowStructure(true);
+          }}
         />
 
-        <section className="flex-1 bg-background">
-          {view === "structure" ? (
-            <RepositoryStructure tree={tree} />
-          ) : (
-            <div className="grid h-full grid-cols-[1fr_520px]">
+        <section className="flex h-full min-h-0 flex-1 bg-background">
+          <div className="flex h-full min-h-0 flex-1 overflow-hidden">
+            <div className="h-full min-h-0 flex-1">
               <Chat
                 chatId={activeChatId}
                 messages={messages}
-                onSourceClick={(path, startLine, endLine) =>
+                onSourceClick={(path, startLine, endLine) => {
+                  setShowStructure(false);
+
                   setSelectedFile({
                     path,
                     startLine,
                     endLine,
-                  })
-                }
+                  });
+                }}
               />
-
-              <CodeViewer repositoryId={repository.id} file={selectedFile} />
             </div>
-          )}
+
+            <div
+              className={`h-full min-h-0 shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${
+                panelFile || showStructure ? "w-[520px]" : "w-0"
+              }`}
+            >
+              <div className="h-full w-[520px]">
+                {panelFile ? (
+                  <CodeViewer
+                    repositoryId={repository.id}
+                    file={panelFile}
+                    onClose={() => setSelectedFile(null)}
+                  />
+                ) : showStructure ? (
+                  <RepositoryStructure
+                    tree={tree}
+                    onClose={() => setShowStructure(false)}
+                  />
+                ) : null}
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </main>
