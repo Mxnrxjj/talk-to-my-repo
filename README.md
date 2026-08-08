@@ -165,7 +165,7 @@ TalkToMyRepo is designed to answer questions such as:
 ### AI
 
 - Gemini 2.5 Flash
-- Jina Embeddings (1024 dimensions)
+- Voyage AI Embeddings (1024 dimensions)
 
 ### Infrastructure
 
@@ -275,6 +275,8 @@ pnpm install
 pnpm prisma migrate dev
 
 pnpm dev
+
+pnpm worker
 ```
 
 ---
