@@ -37,7 +37,29 @@ export async function walkDirectory(
       continue;
     }
 
-    const content = await readFile(fullPath, "utf-8");
+    // const buffer = await readFile(fullPath);
+
+    // if (buffer.includes(0)) {
+    //   console.log(`Skipping binary file: ${fullPath}`);
+    //   continue;
+    // }
+
+    // const content = buffer.toString("utf8");
+
+    // context.files.push({
+    //   path: fullPath,
+    //   content,
+    // });
+
+    const buffer = await readFile(fullPath);
+
+    console.log("size:", buffer.length);
+
+    const content = buffer.toString("utf8");
+
+    if (content.includes("\0")) {
+      continue;
+    }
 
     context.files.push({
       path: fullPath,

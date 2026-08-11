@@ -1,19 +1,18 @@
-import { db } from "@/lib/db";
+import { RepositoryService } from "@/services/repository.service";
 
 import RepositoryList from "@/components/repository/RepositoryList";
+import Navbar from "@/components/layout/Navbar";
 
 export default async function DashboardPage() {
-  const repositories = await db.repository.findMany({
-    orderBy: {
-      updatedAt: "desc",
-    },
-  });
+  const repositories = await RepositoryService.getAllWithCounts();
 
   return (
-    <main className="min-h-screen bg-background">
-      <section className="mx-auto max-w-5xl px-6 py-16">
-        <div className="mb-12">
-          <h1 className="text-4xl font-semibold tracking-tight">
+    <main className="min-h-screen">
+      <Navbar />
+
+      <section className="mx-auto max-w-6xl px-6 py-12">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">
             Repositories
           </h1>
 
@@ -22,7 +21,9 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <RepositoryList repositories={repositories} />
+        <div className="mt-8">
+          <RepositoryList repositories={repositories} />
+        </div>
       </section>
     </main>
   );

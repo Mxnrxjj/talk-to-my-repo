@@ -5,6 +5,7 @@ import { NotFoundError } from "@/lib/errors/not-found-error";
 import { ChatService } from "@/services/chat.service";
 import { chatSchema } from "@/lib/validators/chat";
 import { ChatCompletionService } from "@/services/chat-completion.service";
+import { RateLimitError } from "@/lib/errors/rate-limit-error";
 
 export async function POST(
   request: NextRequest,
@@ -88,6 +89,17 @@ export async function POST(
       },
     });
   } catch (error) {
+    if (error instanceof RateLimitError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+        },
+        {
+          status: 429,
+        },
+      );
+    }
+
     if (error instanceof ZodError) {
       return NextResponse.json(
         {

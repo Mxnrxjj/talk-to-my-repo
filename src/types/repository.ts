@@ -18,6 +18,11 @@ export interface Repository {
 
   createdAt: Date;
   updatedAt: Date;
+
+  _count?: {
+    files: number;
+    chunks: number;
+  };
 }
 
 export interface CreateRepositoryRequest {

@@ -68,7 +68,7 @@ export default function RepositoryForm() {
             </>
           ) : (
             <>
-              Index Repository
+              Try TalkToMyRepo
               <ArrowRight className="ml-2 h-4 w-4" />
             </>
           )}

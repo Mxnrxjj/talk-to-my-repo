@@ -73,7 +73,7 @@ export default function ChatInput({
   return (
     <div
       className={cn(
-        "flex w-full items-end gap-2 rounded-xl border border-input bg-background p-1 shadow-sm",
+        "flex w-full items-center gap-2 rounded-xl border border-input bg-background p-1 shadow-sm",
         "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1",
         className,
       )}
@@ -89,7 +89,8 @@ export default function ChatInput({
         disabled={isDisabled}
         rows={1}
         className={cn(
-          "min-h-[40px] max-h-[200px] flex-1 resize-none border-0 shadow-none",
+          "flex-1 resize-none border-0 shadow-none",
+          "min-h-[40px] max-h-[200px] p-2",
           "focus-visible:ring-0 focus-visible:ring-offset-0",
         )}
       />
@@ -100,7 +101,7 @@ export default function ChatInput({
         onClick={() => void handleSend()}
         disabled={!canSend}
         aria-label="Send message"
-        className="shrink-0"
+        className="shrink-0 self-center"
       >
         {isSending ? (
           <Loader2 className="h-4 w-4 animate-spin" />

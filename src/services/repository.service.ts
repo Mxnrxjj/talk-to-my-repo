@@ -25,10 +25,42 @@ export class RepositoryService {
     });
   }
 
+  static async getByIdWithCounts(id: string) {
+    return db.repository.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        _count: {
+          select: {
+            files: true,
+            chunks: true,
+          },
+        },
+      },
+    });
+  }
+
   static async getAll() {
     return db.repository.findMany({
       orderBy: {
         createdAt: "desc",
+      },
+    });
+  }
+
+  static async getAllWithCounts() {
+    return db.repository.findMany({
+      orderBy: {
+        updatedAt: "desc",
+      },
+      include: {
+        _count: {
+          select: {
+            files: true,
+            chunks: true,
+          },
+        },
       },
     });
   }
@@ -40,6 +72,14 @@ export class RepositoryService {
       },
       data: {
         status,
+      },
+    });
+  }
+
+  static async delete(id: string) {
+    return db.repository.delete({
+      where: {
+        id,
       },
     });
   }

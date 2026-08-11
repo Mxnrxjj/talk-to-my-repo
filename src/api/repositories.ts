@@ -1,5 +1,4 @@
 import { api } from "./client";
-
 import type {
   CreateRepositoryRequest,
   CreateRepositoryResponse,
@@ -17,6 +16,16 @@ export async function createRepository(
 
 export async function getRepositories(): Promise<Repository[]> {
   return api<Repository[]>("/api/repositories");
+}
+
+export async function getRepository(repositoryId: string): Promise<Repository> {
+  return api<Repository>(`/api/repositories/${repositoryId}`);
+}
+
+export async function deleteRepository(repositoryId: string): Promise<void> {
+  return api<void>(`/api/repositories/${repositoryId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function getRepositoryFile(repositoryId: string, path: string) {

@@ -160,14 +160,37 @@ export class ChatService {
       ? ChatTitleService.fromQuestion(question)
       : null;
 
-    const sources = completion.sources
-      .map((index) => chunks[index])
-      .filter(Boolean)
-      .map((chunk) => ({
-        filePath: chunk.filePath,
-        startLine: chunk.startLine,
-        endLine: chunk.endLine,
-      }));
+    const grouped = new Map<
+      string,
+      {
+        filePath: string;
+        startLine: number;
+        endLine: number;
+      }
+    >();
+
+    for (const index of completion.sources) {
+      const chunk = chunks[index];
+
+      if (!chunk) continue;
+
+      const existing = grouped.get(chunk.filePath);
+
+      if (!existing) {
+        grouped.set(chunk.filePath, {
+          filePath: chunk.filePath,
+          startLine: chunk.startLine,
+          endLine: chunk.endLine,
+        });
+
+        continue;
+      }
+
+      existing.startLine = Math.min(existing.startLine, chunk.startLine);
+      existing.endLine = Math.max(existing.endLine, chunk.endLine);
+    }
+
+    const sources = [...grouped.values()];
 
     // const sources = new Map<
     //   string,

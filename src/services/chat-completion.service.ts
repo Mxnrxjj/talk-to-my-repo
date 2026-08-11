@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { RateLimitError } from "@/lib/errors/rate-limit-error";
 
 const MODEL = "gemini-flash-latest";
 
@@ -15,15 +16,14 @@ export class ChatCompletionService {
       throw new Error("GEMINI_API_KEY is not configured");
     }
 
-    const ai = new GoogleGenAI({
-      apiKey,
-    });
+    const ai = new GoogleGenAI({ apiKey });
 
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      config: {
-        responseMimeType: "application/json",
-        systemInstruction: `
+    try {
+      const response = await ai.models.generateContent({
+        model: MODEL,
+        config: {
+          responseMimeType: "application/json",
+          systemInstruction: `
           You are an expert software engineer.
 
           Answer ONLY using the provided repository context.
@@ -48,19 +48,30 @@ export class ChatCompletionService {
           - Only output <<<SOURCES>>> once.
           - Only include indices that exist in the repository context.
           `,
-      },
-      contents: prompt,
-    });
+        },
+        contents: prompt,
+      });
 
-    const text = response.text;
+      const text = response.text;
 
-    if (!text) {
-      throw new Error("Gemini returned an empty response.");
+      if (!text) {
+        throw new Error("Gemini returned an empty response.");
+      }
+
+      return JSON.parse(text) as ChatCompletionResponse;
+    } catch (error: any) {
+      const message = error?.message ?? "";
+
+      if (
+        message.includes("RESOURCE_EXHAUSTED") ||
+        message.includes("429") ||
+        message.toLowerCase().includes("quota")
+      ) {
+        throw new RateLimitError();
+      }
+
+      throw error;
     }
-
-    console.log(text);
-
-    return JSON.parse(text) as ChatCompletionResponse;
   }
 
   static async stream(prompt: string) {
@@ -70,14 +81,13 @@ export class ChatCompletionService {
       throw new Error("GEMINI_API_KEY is not configured");
     }
 
-    const ai = new GoogleGenAI({
-      apiKey,
-    });
+    const ai = new GoogleGenAI({ apiKey });
 
-    return ai.models.generateContentStream({
-      model: MODEL,
-      config: {
-        systemInstruction: `
+    try {
+      return await ai.models.generateContentStream({
+        model: MODEL,
+        config: {
+          systemInstruction: `
         You are an expert software engineer.
 
         Answer ONLY using the provided repository context.
@@ -98,8 +108,21 @@ export class ChatCompletionService {
         - Do not wrap anything in markdown fences.
         - Only reference indices that exist in the provided repository context.
         `,
-      },
-      contents: prompt,
-    });
+        },
+        contents: prompt,
+      });
+    } catch (error: any) {
+      const message = error?.message ?? "";
+
+      if (
+        message.includes("RESOURCE_EXHAUSTED") ||
+        message.includes("429") ||
+        message.toLowerCase().includes("quota")
+      ) {
+        throw new RateLimitError();
+      }
+
+      throw error;
+    }
   }
 }

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  const repositories = await RepositoryService.getAll();
+  const repositories = await RepositoryService.getAllWithCounts();
 
   return NextResponse.json(repositories);
 }
