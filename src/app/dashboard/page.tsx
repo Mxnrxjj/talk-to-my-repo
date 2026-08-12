@@ -1,10 +1,19 @@
+import { redirect } from "next/navigation";
+
 import { RepositoryService } from "@/services/repository.service";
+import { getOptionalCurrentUserId } from "@/lib/auth/current-user";
 
 import RepositoryList from "@/components/repository/RepositoryList";
 import Navbar from "@/components/layout/Navbar";
 
 export default async function DashboardPage() {
-  const repositories = await RepositoryService.getAllWithCounts();
+  const userId = await getOptionalCurrentUserId();
+
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const repositories = await RepositoryService.getAllWithCounts(userId);
 
   return (
     <main className="min-h-screen">
@@ -17,7 +26,7 @@ export default async function DashboardPage() {
           </h1>
 
           <p className="mt-3 text-muted-foreground">
-            All repositories you've indexed.
+            All repositories you&apos;ve indexed.
           </p>
         </div>
 

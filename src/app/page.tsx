@@ -13,6 +13,8 @@ import {
 
 import RepositoryForm from "@/components/repository/RepositoryForm";
 import Navbar from "@/components/layout/Navbar";
+import { getOptionalCurrentUserId } from "@/lib/auth/current-user";
+import { signIn } from "@/lib/auth";
 
 const REPO_URL = "https://github.com/Mxnrxjj/talk-to-my-repo";
 
@@ -85,7 +87,9 @@ const TECHNICAL_HIGHLIGHTS = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const userId = await getOptionalCurrentUserId();
+
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
@@ -109,7 +113,30 @@ export default function LandingPage() {
         </p>
 
         <div className="mt-12 w-full max-w-xl">
-          <RepositoryForm />
+          {userId ? (
+            <RepositoryForm />
+          ) : (
+            <div className="space-y-4">
+              <form
+                action={async () => {
+                  "use server";
+                  await signIn("google", { redirectTo: "/dashboard" });
+                }}
+              >
+                <button
+                  type="submit"
+                  className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/80"
+                >
+                  Sign in with Google
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </form>
+
+              <p className="text-center text-sm text-muted-foreground">
+                Sign in to index a repository and start asking questions.
+              </p>
+            </div>
+          )}
         </div>
 
         <a
@@ -289,10 +316,10 @@ export default function LandingPage() {
 
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
             <Link
-              href="#try"
+              href={userId ? "/dashboard" : "#try"}
               className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/80"
             >
-              Try TalkToMyRepo
+              {userId ? "Go to Dashboard" : "Try TalkToMyRepo"}
               <ArrowRight className="h-4 w-4" />
             </Link>
 

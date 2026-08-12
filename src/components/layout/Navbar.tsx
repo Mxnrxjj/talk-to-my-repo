@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
+import { auth, signIn } from "@/lib/auth";
+
 import ThemeToggle from "./ThemeToggle";
+import UserMenu from "./UserMenu";
 
 const REPO_URL = "https://github.com/Mxnrxjj/talk-to-my-repo";
 
-export default function Navbar() {
+export default async function Navbar() {
+  const session = await auth();
+  const user = session?.user;
+
   return (
     <header className="border-b bg-background">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
@@ -35,6 +41,24 @@ export default function Navbar() {
           </a>
 
           <ThemeToggle />
+
+          {user ? (
+            <UserMenu name={user.name} email={user.email} image={user.image} />
+          ) : (
+            <form
+              action={async () => {
+                "use server";
+                await signIn("google", { redirectTo: "/dashboard" });
+              }}
+            >
+              <button
+                type="submit"
+                className="ml-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/80"
+              >
+                Sign in with Google
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </header>

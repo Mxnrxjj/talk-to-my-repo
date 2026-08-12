@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { RepositoryFileService } from "@/services/repository-file.service";
 import { RepositoryService } from "@/services/repository.service";
+import { getCurrentUserId } from "@/lib/auth/current-user";
+import { handleApiError } from "@/lib/api/handle-error";
 
 export async function GET(
   request: NextRequest,
@@ -11,37 +12,39 @@ export async function GET(
     params: Promise<{ repositoryId: string }>;
   },
 ) {
-  const { repositoryId } = await params;
+  try {
+    const userId = await getCurrentUserId();
 
-  // Dashboard polling behavior
-  const repository = await RepositoryService.getByIdWithCounts(repositoryId);
+    const { repositoryId } = await params;
 
-  if (!repository) {
-    return NextResponse.json(
-      { error: "Repository not found." },
-      { status: 404 },
+    // Dashboard polling behavior. requireOwnedWithCounts returns 404 for
+    // both "doesn't exist" and "belongs to someone else".
+    const repository = await RepositoryService.requireOwnedWithCounts(
+      userId,
+      repositoryId,
     );
-  }
 
-  return NextResponse.json(repository);
+    return NextResponse.json(repository);
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 export async function DELETE(
   _: NextRequest,
   { params }: { params: Promise<{ repositoryId: string }> },
 ) {
-  const { repositoryId } = await params;
+  try {
+    const userId = await getCurrentUserId();
 
-  const repository = await RepositoryService.getById(repositoryId);
+    const { repositoryId } = await params;
 
-  if (!repository) {
-    return NextResponse.json(
-      { error: "Repository not found." },
-      { status: 404 },
-    );
+    await RepositoryService.requireOwned(userId, repositoryId);
+
+    await RepositoryService.delete(repositoryId);
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  await RepositoryService.delete(repositoryId);
-
-  return new NextResponse(null, { status: 204 });
 }

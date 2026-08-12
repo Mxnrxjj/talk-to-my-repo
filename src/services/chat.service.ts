@@ -6,6 +6,23 @@ import { NotFoundError } from "@/lib/errors/not-found-error";
 import { ChatTitleService } from "./chat-title.service";
 
 export class ChatService {
+  static async requireOwned(userId: string, chatId: string) {
+    const chat = await db.chat.findUnique({
+      where: {
+        id: chatId,
+      },
+      include: {
+        repository: true,
+      },
+    });
+
+    if (!chat || chat.repository.userId !== userId) {
+      throw new NotFoundError(`Chat ${chatId} not found`);
+    }
+
+    return chat;
+  }
+
   static async getByRepository(repositoryId: string) {
     return db.chat.findMany({
       where: {

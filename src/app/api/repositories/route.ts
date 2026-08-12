@@ -1,26 +1,44 @@
 import { NextResponse } from "next/server";
+
 import { RepositoryService } from "@/services/repository.service";
 import { createRepositorySchema } from "@/lib/validators/repository";
+import { getCurrentUserId } from "@/lib/auth/current-user";
+import { handleApiError } from "@/lib/api/handle-error";
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  try {
+    const userId = await getCurrentUserId();
 
-  const result = createRepositorySchema.safeParse(body);
+    const body = await request.json();
 
-  if (!result.success) {
-    return NextResponse.json(
-      { error: result.error.flatten() },
-      { status: 400 },
+    const result = createRepositorySchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error.flatten() },
+        { status: 400 },
+      );
+    }
+
+    const repository = await RepositoryService.create(
+      userId,
+      result.data.githubUrl,
     );
+
+    return NextResponse.json(repository, { status: 201 });
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  const repository = await RepositoryService.create(result.data.githubUrl);
-
-  return NextResponse.json(repository, { status: 201 });
 }
 
 export async function GET() {
-  const repositories = await RepositoryService.getAllWithCounts();
+  try {
+    const userId = await getCurrentUserId();
 
-  return NextResponse.json(repositories);
+    const repositories = await RepositoryService.getAllWithCounts(userId);
+
+    return NextResponse.json(repositories);
+  } catch (error) {
+    return handleApiError(error);
+  }
 }

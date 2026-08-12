@@ -1,20 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
-import { ZodError } from "zod";
-import { NotFoundError } from "@/lib/errors/not-found-error";
+import { NextRequest } from "next/server";
 
 import { ChatService } from "@/services/chat.service";
 import { chatSchema } from "@/lib/validators/chat";
 import { ChatCompletionService } from "@/services/chat-completion.service";
-import { RateLimitError } from "@/lib/errors/rate-limit-error";
+import { getCurrentUserId } from "@/lib/auth/current-user";
+import { handleApiError } from "@/lib/api/handle-error";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> },
 ) {
   try {
+    const userId = await getCurrentUserId();
+
     const { chatId } = await params;
 
     const body = chatSchema.parse(await request.json());
+
+    // Verify the chat's repository belongs to the current user before
+    // touching the retrieval/completion pipeline.
+    await ChatService.requireOwned(userId, chatId);
 
     const prepared = await ChatService.prepare(chatId, body.question);
 
@@ -89,39 +94,6 @@ export async function POST(
       },
     });
   } catch (error) {
-    if (error instanceof RateLimitError) {
-      return NextResponse.json(
-        {
-          error: error.message,
-        },
-        {
-          status: 429,
-        },
-      );
-    }
-
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        {
-          error: error.flatten(),
-        },
-        {
-          status: 400,
-        },
-      );
-    }
-
-    if (error instanceof NotFoundError) {
-      return NextResponse.json(
-        {
-          error: error.message,
-        },
-        {
-          status: 404,
-        },
-      );
-    }
-
-    throw error;
+    return handleApiError(error);
   }
 }

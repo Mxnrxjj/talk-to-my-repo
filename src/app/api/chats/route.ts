@@ -1,29 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ZodError } from "zod";
 
 import { db } from "@/lib/db";
 import { createChatSchema } from "@/lib/validators/chat";
+import { RepositoryService } from "@/services/repository.service";
+import { getCurrentUserId } from "@/lib/auth/current-user";
+import { handleApiError } from "@/lib/api/handle-error";
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getCurrentUserId();
+
     const body = createChatSchema.parse(await request.json());
 
-    const repository = await db.repository.findUnique({
-      where: {
-        id: body.repositoryId,
-      },
-    });
-
-    if (!repository) {
-      return NextResponse.json(
-        {
-          error: "Repository not found",
-        },
-        {
-          status: 404,
-        },
-      );
-    }
+    // Never trust repositoryId from the client for ownership: verify the
+    // repository exists and belongs to the current user before creating
+    // a chat under it.
+    await RepositoryService.requireOwned(userId, body.repositoryId);
 
     const chat = await db.chat.create({
       data: {
@@ -35,17 +27,6 @@ export async function POST(request: NextRequest) {
       status: 201,
     });
   } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        {
-          error: error.flatten(),
-        },
-        {
-          status: 400,
-        },
-      );
-    }
-
-    throw error;
+    return handleApiError(error);
   }
 }

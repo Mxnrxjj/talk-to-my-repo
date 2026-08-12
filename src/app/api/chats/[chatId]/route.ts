@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 
 import { ChatService } from "@/services/chat.service";
-import { NotFoundError } from "@/lib/errors/not-found-error";
+import { getCurrentUserId } from "@/lib/auth/current-user";
+import { handleApiError } from "@/lib/api/handle-error";
 
 const updateChatSchema = z.object({
   title: z.string().trim().min(1).max(100),
@@ -13,37 +14,19 @@ export async function PATCH(
   { params }: { params: Promise<{ chatId: string }> },
 ) {
   try {
+    const userId = await getCurrentUserId();
+
     const { chatId } = await params;
 
     const body = updateChatSchema.parse(await request.json());
+
+    await ChatService.requireOwned(userId, chatId);
 
     const chat = await ChatService.rename(chatId, body.title);
 
     return NextResponse.json(chat);
   } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        {
-          error: error.flatten(),
-        },
-        {
-          status: 400,
-        },
-      );
-    }
-
-    if (error instanceof NotFoundError) {
-      return NextResponse.json(
-        {
-          error: error.message,
-        },
-        {
-          status: 404,
-        },
-      );
-    }
-
-    throw error;
+    return handleApiError(error);
   }
 }
 
@@ -52,7 +35,11 @@ export async function DELETE(
   { params }: { params: Promise<{ chatId: string }> },
 ) {
   try {
+    const userId = await getCurrentUserId();
+
     const { chatId } = await params;
+
+    await ChatService.requireOwned(userId, chatId);
 
     await ChatService.delete(chatId);
 
@@ -60,17 +47,6 @@ export async function DELETE(
       status: 204,
     });
   } catch (error) {
-    if (error instanceof NotFoundError) {
-      return NextResponse.json(
-        {
-          error: error.message,
-        },
-        {
-          status: 404,
-        },
-      );
-    }
-
-    throw error;
+    return handleApiError(error);
   }
 }

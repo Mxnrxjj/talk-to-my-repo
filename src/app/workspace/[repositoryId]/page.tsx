@@ -1,8 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { db } from "@/lib/db";
 import { ChatService } from "@/services/chat.service";
+import { RepositoryService } from "@/services/repository.service";
 import { FileTreeService } from "@/services/file-tree.service";
+import { getOptionalCurrentUserId } from "@/lib/auth/current-user";
 
 import Workspace from "@/components/workspace/Workspace";
 
@@ -19,16 +20,20 @@ export default async function WorkspacePage({
   params,
   searchParams,
 }: WorkspacePageProps) {
+  const userId = await getOptionalCurrentUserId();
+
+  if (!userId) {
+    redirect("/login");
+  }
+
   const { repositoryId } = await params;
   const { chat: chatId } = await searchParams;
 
-  const repository = await db.repository.findUnique({
-    where: {
-      id: repositoryId,
-    },
-  });
+  const repository = await RepositoryService.getById(repositoryId);
 
-  if (!repository) {
+  // 404 (not 403) whether the repository doesn't exist or belongs to
+  // someone else, so repository existence isn't exposed to other users.
+  if (!repository || repository.userId !== userId) {
     notFound();
   }
 
@@ -39,7 +44,7 @@ export default async function WorkspacePage({
     chats = await ChatService.getByRepository(repository.id);
   }
 
-  let activeChat = chats.find((chat) => chat.id === chatId) ?? chats[0];
+  const activeChat = chats.find((chat) => chat.id === chatId) ?? chats[0];
 
   if (!activeChat) {
     notFound();

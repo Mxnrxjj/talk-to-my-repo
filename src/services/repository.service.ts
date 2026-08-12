@@ -1,12 +1,14 @@
 import { db } from "@/lib/db";
 import { repositoryQueue } from "@/lib/queue";
 import { RepositoryStatus } from "@prisma/client";
+import { NotFoundError } from "@/lib/errors/not-found-error";
 
 export class RepositoryService {
-  static async create(githubUrl: string) {
+  static async create(userId: string, githubUrl: string) {
     const repository = await db.repository.create({
       data: {
         githubUrl,
+        userId,
       },
     });
 
@@ -41,16 +43,22 @@ export class RepositoryService {
     });
   }
 
-  static async getAll() {
+  static async getAll(userId: string) {
     return db.repository.findMany({
+      where: {
+        userId,
+      },
       orderBy: {
         createdAt: "desc",
       },
     });
   }
 
-  static async getAllWithCounts() {
+  static async getAllWithCounts(userId: string) {
     return db.repository.findMany({
+      where: {
+        userId,
+      },
       orderBy: {
         updatedAt: "desc",
       },
@@ -82,5 +90,29 @@ export class RepositoryService {
         id,
       },
     });
+  }
+
+  static async requireOwned(userId: string, repositoryId: string) {
+    const repository = await db.repository.findUnique({
+      where: {
+        id: repositoryId,
+      },
+    });
+
+    if (!repository || repository.userId !== userId) {
+      throw new NotFoundError(`Repository ${repositoryId} not found`);
+    }
+
+    return repository;
+  }
+
+  static async requireOwnedWithCounts(userId: string, repositoryId: string) {
+    const repository = await this.getByIdWithCounts(repositoryId);
+
+    if (!repository || repository.userId !== userId) {
+      throw new NotFoundError(`Repository ${repositoryId} not found`);
+    }
+
+    return repository;
   }
 }
