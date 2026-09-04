@@ -32,6 +32,10 @@ export async function walkDirectory(
 
     const fileStats = await stat(fullPath);
 
+    if (!fileStats.isFile()) {
+      continue;
+    }
+
     if (fileStats.size > MAX_FILE_SIZE) {
       console.log(`Skiping large file : ${fullPath}`);
       continue;
