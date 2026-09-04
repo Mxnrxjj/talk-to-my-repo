@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -27,6 +25,61 @@ services:
 
     volumes:
       - redis_data:/data
+
+  web:
+    build:
+      context: .
+      target: web
+
+    container_name: talk-to-my-repo-web
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      NODE_ENV: production
+
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/talk_to_my_repo
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID}
+      AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET}
+
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    build:
+      context: .
+      target: worker
+
+    container_name: talk-to-my-repo-worker
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+
+      AUTH_TRUST_HOST: "true"
+
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/talk_to_my_repo
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+
+    depends_on:
+      - postgres
+      - redis
 
 volumes:
   postgres_data:

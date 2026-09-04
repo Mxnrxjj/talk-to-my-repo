@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "worker": "tsx worker/index.ts",
+    "worker": "tsx -r tsconfig-paths/register worker/index.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -32,6 +32,7 @@
     "shadcn": "^4.16.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
+    "tsconfig-paths": "^4.2.0",
     "tw-animate-css": "^1.4.0",
     "zod": "^4.4.3"
   },
