@@ -16,6 +16,7 @@ interface RepositoryCardProps {
   onOpen: (repositoryId: string) => void;
   onDelete: (repository: Repository) => void;
   className?: string;
+  isOpening?: boolean;
 }
 
 const STATUS: Record<RepositoryStatus, { label: string; dot: string }> = {
@@ -79,6 +80,7 @@ export default function RepositoryCard({
   repository,
   onOpen,
   onDelete,
+  isOpening = false,
   className,
 }: RepositoryCardProps) {
   const status = STATUS[repository.status];
@@ -124,7 +126,7 @@ export default function RepositoryCard({
 
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              disabled={!isReady}
+              disabled={!isReady || isOpening}
               onClick={() => onOpen(repository.id)}
             >
               Open Workspace
@@ -168,18 +170,23 @@ export default function RepositoryCard({
       <div className="mt-5 border-t pt-4">
         <button
           onClick={() => onOpen(repository.id)}
-          disabled={!isReady}
+          disabled={!isReady || isOpening}
           className={cn(
             "group flex items-center gap-1.5 text-sm font-medium transition",
             isReady
               ? "text-foreground hover:text-primary"
               : "cursor-not-allowed text-muted-foreground",
+            isOpening && "cursor-wait opacity-70",
           )}
         >
-          {isReady ? "Open Workspace" : "Processing"}
+          {isOpening ? "Opening..." : isReady ? "Open Workspace" : "Processing"}
 
-          {isReady && (
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          {isOpening ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            isReady && (
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            )
           )}
         </button>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { getRepositories } from "@/api/repositories";
@@ -34,6 +34,9 @@ export default function RepositoryList({
 
   const statusFingerprint = repositories.map((r) => r.status).join(",");
 
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const [isOpening, startOpening] = useTransition();
+
   useEffect(() => {
     const hasInProgress = repositories.some((repository) =>
       IN_PROGRESS_STATUSES.has(repository.status),
@@ -58,7 +61,13 @@ export default function RepositoryList({
   }, [statusFingerprint]);
 
   function handleOpen(repositoryId: string) {
-    router.push(`/workspace/${repositoryId}`);
+    if (isOpening) return;
+
+    setOpeningId(repositoryId);
+
+    startOpening(() => {
+      router.push(`/workspace/${repositoryId}`);
+    });
   }
 
   function handleCreated(repository: Repository) {
@@ -103,6 +112,7 @@ export default function RepositoryList({
             key={repository.id}
             repository={repository}
             onOpen={handleOpen}
+            isOpening={isOpening && openingId === repository.id}
             onDelete={setPendingDelete}
           />
         ))}
