@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import ChatInput from "./ChatInput";
 import { ChatMessage } from "./ChatMessage";
@@ -25,10 +26,12 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
 
   const [loading, setLoading] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+  const [failure, setFailure] = useState<{ question: string } | null>(null);
   const [streamingAnswer, setStreamingAnswer] = useState("");
 
   async function handleSend(question: string) {
     try {
+      setFailure(null);
       setPendingQuestion(question);
       setStreamingAnswer("");
       setLoading(true);
@@ -46,12 +49,23 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
           break;
         }
 
-        setStreamingAnswer((prev) => prev + decoder.decode(value));
+        setStreamingAnswer(
+          (prev) => prev + decoder.decode(value, { stream: true }),
+        );
       }
 
       router.refresh();
-    } finally {
       setPendingQuestion(null);
+    } catch (error) {
+      // Keep the user's question on screen and show a failed reply under it.
+      setFailure({ question });
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
       setStreamingAnswer("");
       setLoading(false);
     }
@@ -87,7 +101,7 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
     bottomRef.current?.scrollIntoView({
       behavior: "smooth",
     });
-  }, [optimisticMessages]);
+  }, [optimisticMessages.length, streamingAnswer, failure]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -132,7 +146,21 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
                   onSourceClick={onSourceClick}
                 />
               ))}
+              {failure && !loading && (
+                <div className="flex gap-3">
+                  <div className="flex max-w-2xl flex-col gap-2 rounded-xl border border-red-900/60 bg-red-950/30 px-4 py-3 text-sm text-red-200">
+                    <p>Answer generation failed. Please try again.</p>
 
+                    <button
+                      type="button"
+                      onClick={() => handleSend(failure.question)}
+                      className="self-start rounded-md border border-red-800 px-3 py-1 text-xs transition hover:bg-red-900/40"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              )}
               <div ref={bottomRef} />
             </>
           )}
