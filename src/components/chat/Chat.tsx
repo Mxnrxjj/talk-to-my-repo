@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
+  const [isRefreshing, startRefresh] = useTransition();
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   const [failure, setFailure] = useState<{ question: string } | null>(null);
   const [streamingAnswer, setStreamingAnswer] = useState("");
@@ -54,9 +55,11 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
         );
       }
 
-      router.refresh();
-      setPendingQuestion(null);
+      startRefresh(() => {
+        router.refresh();
+      });
     } catch (error) {
+      setStreamingAnswer("");
       // Keep the user's question on screen and show a failed reply under it.
       setFailure({ question });
 
@@ -66,14 +69,15 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
           : "Something went wrong. Please try again.",
       );
     } finally {
-      setStreamingAnswer("");
       setLoading(false);
     }
   }
 
+  const showPending = loading || isRefreshing;
+
   const optimisticMessages = [
     ...messages,
-    ...(pendingQuestion
+    ...(pendingQuestion && (showPending || failure)
       ? [
           {
             id: "pending-user",
@@ -83,7 +87,7 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
           },
         ]
       : []),
-    ...(loading
+    ...(showPending
       ? [
           {
             id: "pending-assistant",
