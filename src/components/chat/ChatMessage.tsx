@@ -12,6 +12,36 @@ export interface ChatMessageProps {
   onSourceClick?: (path: string, startLine: number, endLine: number) => void;
 }
 
+function mergeSources(sources: ChatSource[]): ChatSource[] {
+  const byFile = new Map<string, ChatSource[]>();
+
+  for (const source of sources) {
+    const list = byFile.get(source.filePath) ?? [];
+    list.push(source);
+    byFile.set(source.filePath, list);
+  }
+
+  const merged: ChatSource[] = [];
+
+  for (const list of byFile.values()) {
+    const sorted = [...list].sort((a, b) => a.startLine - b.startLine);
+    let current = { ...sorted[0] };
+
+    for (const next of sorted.slice(1)) {
+      if (next.startLine <= current.endLine + 1) {
+        current.endLine = Math.max(current.endLine, next.endLine);
+      } else {
+        merged.push(current);
+        current = { ...next };
+      }
+    }
+
+    merged.push(current);
+  }
+
+  return merged;
+}
+
 export function ChatMessage({
   role,
   content,
@@ -19,6 +49,7 @@ export function ChatMessage({
   onSourceClick,
 }: ChatMessageProps) {
   const isAssistant = role === "assistant";
+  const mergedSources = mergeSources(sources ?? []);
 
   return (
     <div className={cn("flex gap-3", !isAssistant && "flex-row-reverse")}>
@@ -86,20 +117,20 @@ export function ChatMessage({
         </div>
 
         {/* Source chips */}
-        {sources && sources.length > 0 && (
+        {mergedSources.length > 0 && (
           <div className="mt-3 border-t border-zinc-800 pt-3">
             <div className="mb-2 text-[11px] font-medium tracking-wide text-white/80">
-              SOURCES & LINE REFERENCES ({sources.length})
+              SOURCES & LINE REFERENCES ({mergedSources.length})
             </div>
             <div className="flex flex-wrap gap-2">
-              {sources.map((source) => {
+              {mergedSources.map((source) => {
                 const parts = source.filePath.replaceAll("\\", "/").split("/");
 
                 const fileName = parts.pop()!;
                 const folder = parts.join("/");
                 return (
                   <button
-                    key={`${source.filePath}-${source.startLine}`}
+                    key={`${source.filePath}-${source.startLine}-${source.endLine}`}
                     className="flex items-center hover:bg-zinc-800 gap-1.5 rounded-md border border-zinc-700 bg-zinc-800/60 px-2.5 py-1 text-xs text-zinc-300"
                     onClick={() =>
                       onSourceClick?.(
@@ -114,6 +145,9 @@ export function ChatMessage({
                     <div className="flex flex-col items-start">
                       <p className="font-medium">{fileName}</p>
                       <p className="text-xs text-muted-foreground">{folder}</p>
+                      <p className="text-[11px] text-zinc-500">
+                        Lines {source.startLine}–{source.endLine}
+                      </p>
                     </div>
                   </button>
                 );
