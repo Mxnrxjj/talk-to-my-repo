@@ -27,6 +27,8 @@ export async function POST(
 
     const encoder = new TextEncoder();
 
+    const MARKER = "<<<SOURCES>>>";
+
     let fullResponse = "";
     let streamedLength = 0;
 
@@ -34,27 +36,33 @@ export async function POST(
       async start(controller) {
         try {
           for await (const chunk of stream) {
-            const text = chunk.text ?? "";
+            fullResponse += chunk.text ?? "";
 
-            fullResponse += text;
+            const markerIndex = fullResponse.indexOf(MARKER);
 
-            const marker = "<<<SOURCES>>>";
-
-            const markerIndex = fullResponse.indexOf(marker);
-
-            const visibleText =
+            // Show everything before the marker. Until the marker appears, hold
+            // back the last 12 characters, because they could be its first half.
+            const safeEnd =
               markerIndex === -1
-                ? fullResponse
-                : fullResponse.slice(0, markerIndex);
+                ? Math.max(0, fullResponse.length - (MARKER.length - 1))
+                : markerIndex;
 
-            const newChunk = visibleText.slice(streamedLength);
+            const newChunk = fullResponse.slice(streamedLength, safeEnd);
 
             if (newChunk.length > 0) {
               streamedLength += newChunk.length;
               controller.enqueue(encoder.encode(newChunk));
             }
+          }
 
-            controller.enqueue(encoder.encode(text));
+          // Send whatever was held back, now that the stream is finished.
+          const endIndex = fullResponse.indexOf(MARKER);
+          const visibleText =
+            endIndex === -1 ? fullResponse : fullResponse.slice(0, endIndex);
+          const rest = visibleText.slice(streamedLength);
+
+          if (rest.length > 0) {
+            controller.enqueue(encoder.encode(rest));
           }
 
           const marker = "<<<SOURCES>>>";
