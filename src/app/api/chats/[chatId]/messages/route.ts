@@ -88,6 +88,18 @@ export async function POST(
             prepared.title,
           );
 
+          const sourcesForClient = selectedChunks.map((chunk) => ({
+            filePath: chunk.filePath,
+            startLine: chunk.startLine,
+            endLine: chunk.endLine,
+          }));
+
+          controller.enqueue(
+            encoder.encode(
+              `<<<SOURCES_JSON>>>${JSON.stringify(sourcesForClient)}`,
+            ),
+          );
+
           controller.close();
         } catch (error) {
           controller.error(error);

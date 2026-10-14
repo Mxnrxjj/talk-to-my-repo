@@ -73,6 +73,24 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
     }
   }
 
+  const META_MARKER = "<<<SOURCES_JSON>>>";
+  const metaIndex = streamingAnswer.indexOf(META_MARKER);
+
+  const visibleAnswer =
+    metaIndex === -1 ? streamingAnswer : streamingAnswer.slice(0, metaIndex);
+
+  let streamingSources: ChatSource[] = [];
+
+  if (metaIndex !== -1) {
+    try {
+      streamingSources = JSON.parse(
+        streamingAnswer.slice(metaIndex + META_MARKER.length),
+      );
+    } catch {
+      // The JSON is still arriving; show the chips on the next update.
+    }
+  }
+
   const showPending = loading || isRefreshing;
 
   const optimisticMessages = [
@@ -92,8 +110,8 @@ export default function Chat({ chatId, messages, onSourceClick }: ChatProps) {
           {
             id: "pending-assistant",
             role: "assistant",
-            content: streamingAnswer || "Thinking...",
-            sources: [],
+            content: visibleAnswer || "Thinking...",
+            sources: streamingSources,
           },
         ]
       : []),
